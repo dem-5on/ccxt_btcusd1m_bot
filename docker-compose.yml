@@ -1,0 +1,14 @@
+version: "3.9"
+
+services:
+  trading_bot:
+    build: .
+    container_name: trading_bot
+    restart: unless-stopped
+    volumes:
+      - ./:/app # Mount the entire project directory
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M

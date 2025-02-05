@@ -1,1 +1,1 @@
-# ccxt_btcusd1m_bot
+Still testing and fine tunning this bot for better results
