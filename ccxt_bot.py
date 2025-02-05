@@ -1,6 +1,6 @@
 import ccxt
 import ta
-import ccxt_btcusd1m_bot.secret as secret
+import secret as secret
 import pandas as pd
 import schedule
 import time
