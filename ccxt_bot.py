@@ -228,7 +228,7 @@ while True:
                         # Update trend state
                         s_data.loc[s_data.index[-1], 'in_uptrend'] = False
                         ha_data.loc[ha_data.index[-1], 'ha_uptrend']=False
-                        ema_data.loc[ema_data.index[-1], 'ema_uptrrend']=False
+                        ema_data.loc[ema_data.index[-1], 'ema_uptrend']=False
 
                         return 
                     else:
@@ -331,7 +331,7 @@ while True:
 
         def run():
             print('fetching market data')
-            bars = exchange.fetch_ohlcv('BTC/USDT', timeframe='1m', limit=35)
+            bars = exchange.fetch_ohlcv('BTC/USDT', timeframe='1m', limit=40)
             df = pd.DataFrame(bars[:-1], columns=['timestamp','open','high','low','close','volume'])
             df['timestamp']=pd.to_datetime(df['timestamp'], unit='ms')
 
@@ -340,11 +340,6 @@ while True:
             ema_data = ema(df)
             check_signal(s_data,ha_data,ema_data)
 
-        schedule.every(1).minutes.do(run)
-
-        while True:
-            schedule.run_pending()
-            time.sleep(1)
 
     except ccxt.NetworkError as e:
         print(f'Network error: {e}')
