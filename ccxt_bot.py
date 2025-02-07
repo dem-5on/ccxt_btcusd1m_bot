@@ -1,6 +1,6 @@
 import ccxt
 import ta
-import secret as secret
+import secret
 import pandas as pd
 import schedule
 import time
@@ -10,6 +10,7 @@ import requests
 
 while True:
     try:
+        
         exchange = ccxt.binance({
             'apiKey':secret.BINANCE_API_KEY,
             'secret':secret.BINANCE_SECRET_KEY
@@ -117,7 +118,7 @@ while True:
 
         def check_signal(ema_data,ha_data, s_data, multiplier=2, risk_reward_ratio=2):
             SIGNAL_MESSAGE = ('=====================================\n'
-            'Checking for buy or sell signal\n')
+            'Checking for buy or sell signal\n\n')
             payload = {
                 'username': 'alertbot',
                 'content': SIGNAL_MESSAGE
@@ -125,6 +126,7 @@ while True:
             WEBHOOK_URL = secret.DISCORD_WEBHOOK
             requests.post(WEBHOOK_URL, json=payload)
 
+            print(exchange.get) # Before the try block
             try:
                 # Fetch current market price
                 ticker = exchange.fetch_ticker(symbol)
@@ -132,6 +134,8 @@ while True:
 
                 # Fetch balance of USDT
                 balance = exchange.fetch_balance(params={'type':'spot'})['total']['USDT']
+                if balance <=1:
+                    balance = 20
 
                 # Calculate order size in USDT and convert it to the base currency
                 order_size = balance * 0.5 if balance >= 100 else balance
@@ -143,7 +147,7 @@ while True:
                 precise_amount = exchange.amount_to_precision(symbol, base_amount)
 
                 # Ensure amount meets minimum requirements
-                if precise_amount < min_amount:
+                if float(precise_amount) < float(min_amount):
                     precise_amount = min_amount
 
                 # Get current trend state
@@ -165,6 +169,18 @@ while True:
                 requests.post(WEBHOOK_URL, json=payload)
 
                 if orders==[]:
+                    CHECK_BUY = ('\n\n================================\n'
+                                     'Checking for buy signal...\n'
+                                     '================================\n')
+                    
+                    payload = {
+                        'username': 'alertbot',
+                        'content': CHECK_BUY
+                    }
+                    WEBHOOK_URL = secret.DISCORD_WEBHOOK
+                    requests.post(WEBHOOK_URL, json=payload)
+
+                    #Buy conditions 
                     if current_ha_trend and current_supertrend and current_ema_trend:
                         UPTREND_MESSAGE = ('=====================================\n'
                         'Uptrend detected, Buy\n'
@@ -187,7 +203,14 @@ while True:
                             'takeProfit': long_tp
                         }
                         try:
-                            order = exchange.create_market_buy_order(symbol=symbol, amount=precise_amount, params=params)
+                            # order = exchange.create_market_buy_order(symbol=symbol, amount=precise_amount, params=params)
+                            order = exchange.create_order(
+                                symbol=symbol,
+                                type='MARKET',
+                                side='BUY',
+                                amount=precise_amount,
+                                params=params
+                            )
                             payload = {
                             'username': 'alertbot',
                             'content': order,
@@ -207,78 +230,94 @@ while True:
                         s_data.loc[s_data.index[-1], 'in_uptrend'] = False
                         ha_data.loc[ha_data.index[-1], 'ha_uptrend']=False
                         ema_data.loc[ema_data.index[-1], 'ema_uptrrend']=False
+
+                        return 
                     else:
-                        NO_UPTREND_MESSAGE = ('No Up Trend detected\n'
-                        f'Current HA Uptrend and Current Supper Trend are not equal {current_supertrend}:{current_ha_trend}:{current_ema_trend}\n'
-                        )
-                        payload = {
-                            'username': 'alertbot',
-                            'content': NO_UPTREND_MESSAGE
-                        }
-                        WEBHOOK_URL = secret.DISCORD_WEBHOOK
-                        requests.post(WEBHOOK_URL, json=payload)
-
-
-                    # Sell Signal Detection
-                    if not current_ha_trend  and not current_supertrend and not current_ema_trend:
-                        DOWN_TREND_MESSAGE = ('=====================================\n'
-                                    'Downtrend detected, Sell\n'
-                                    '=====================================\n'
-                                    )
+                        CHECK_SELL = ('\n\nNo buy signal detected\n'
+                                      f'The trends are {current_supertrend} : {current_ha_trend} : {current_ema_trend}\n\n'
+                                      '======================================\n'
+                                      'Checking for SELL signal...\n'
+                                      '======================================\n\n')
                         
                         payload = {
                             'username': 'alertbot',
-                            'content': DOWN_TREND_MESSAGE
+                            'content': CHECK_SELL
                         }
                         WEBHOOK_URL = secret.DISCORD_WEBHOOK
-
                         requests.post(WEBHOOK_URL, json=payload)
 
-
-                        # Execute sell order
-                        sl_distance = ha_data['ha_atr'] * multiplier
-                        tp_distalce = sl_distance * risk_reward_ratio
-                        short_tp =  current_price - tp_distalce
-                        short_sl = current_price + sl_distance
-                        params = {
-                            'stopLoss': short_sl,  # limit price for a limit stop loss order
+                        # Sell Signal Conditions
+                        if not current_ha_trend  and not current_supertrend and not current_ema_trend:
+                            DOWN_TREND_MESSAGE = ('=====================================\n'
+                                        'Downtrend detected, Sell\n'
+                                        '=====================================\n'
+                                        )
                             
-                            'takeProfit': short_tp 
-                        }                
-                        try:
-                            order = exchange.create_market_sell_order(symbol=symbol, amount=precise_amount, params=params)
-                            payload = {
-                            'username': 'alertbot',
-                            'content': order,
-                            }
-                            WEBHOOK_URL = secret.DISCORD_WEBHOOK
-                            requests.post(WEBHOOK_URL, json=payload)
-                        except Exception as e:
-                            error_message = f"Order error: {e}"
-                            # Log detailed error for debugging
                             payload = {
                                 'username': 'alertbot',
-                                'content': error_message
+                                'content': DOWN_TREND_MESSAGE
                             }
-                            requests.post(secret.DISCORD_WEBHOOK, json=payload)
+                            WEBHOOK_URL = secret.DISCORD_WEBHOOK
 
-                        # Reset trend state for next potential buy
-                        s_data.loc[s_data.index[-1], 'in_uptrend'] = True
-                        ha_data.loc[ha_data.index[-1], 'ha_uptrend']=True
-                        ema_data.loc[ema_data.index[-1], 'ema_uptrrend']=True
+                            requests.post(WEBHOOK_URL, json=payload)
 
-                    else:
-                        NO_DOWNTREND_MESSAGE = ('No Down Trend detected\n'
-                        '=====================================\n'
-                        f'Current HA Uptrend and Current Supper Trend are not equal {current_supertrend}:{current_ha_trend}:{current_ema_trend}\n'
-                        '=====================================\n\n')
-                        payload = {
+
+                            # Execute sell order
+                            sl_distance = ha_data['ha_atr'] * multiplier
+                            tp_distalce = sl_distance * risk_reward_ratio
+                            short_tp =  current_price - tp_distalce
+                            short_sl = current_price + sl_distance
+                            params = {
+                                'stopLoss': short_sl,  # limit price for a limit stop loss order
+                                
+                                'takeProfit': short_tp 
+                            }                
+                            try:
+                                # order = exchange.create_market_sell_order(symbol=symbol, amount=precise_amount, params=params)
+                                order = exchange.create_order(
+                                symbol=symbol,
+                                type='MARKET',
+                                side='SELL',
+                                amount=precise_amount,
+                                params=params
+                            )
+                                payload = {
+                                'username': 'alertbot',
+                                'content': order,
+                                }
+                                WEBHOOK_URL = secret.DISCORD_WEBHOOK
+                                requests.post(WEBHOOK_URL, json=payload)
+                            except Exception as e:
+                                error_message = f"Order error: {e}"
+                                # Log detailed error for debugging
+                                payload = {
+                                    'username': 'alertbot',
+                                    'content': error_message
+                                }
+                                requests.post(secret.DISCORD_WEBHOOK, json=payload)
+
+                            # Reset trend state for next potential buy
+                            s_data.loc[s_data.index[-1], 'in_uptrend'] = True
+                            ha_data.loc[ha_data.index[-1], 'ha_uptrend']=True
+                            ema_data.loc[ema_data.index[-1], 'ema_uptrrend']=True
+                        else:
+                            no_sell = ('No sell signal detected :'
+                                       f'The trends are {current_supertrend} : {current_ha_trend} : {current_ema_trend}')
+                            payload = {
+                                'username': 'alertbot',
+                                'content': no_sell,
+                                }
+                            WEBHOOK_URL = secret.DISCORD_WEBHOOK
+                            requests.post(WEBHOOK_URL, json=payload)
+                else:
+                    order_available = f'There are orders : {orders}'
+                    payload = {
                             'username': 'alertbot',
-                            'content': NO_DOWNTREND_MESSAGE
+                            'content': order_available
                         }
-                        WEBHOOK_URL = secret.DISCORD_WEBHOOK
+                    WEBHOOK_URL = secret.DISCORD_WEBHOOK
 
-                        requests.post(WEBHOOK_URL, json=payload)
+                    requests.post(WEBHOOK_URL, json=payload)
 
             except Exception as e:
                 error = f'An error occurred: {str(e)}'
