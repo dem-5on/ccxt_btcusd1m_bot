@@ -126,7 +126,6 @@ while True:
             WEBHOOK_URL = secret.DISCORD_WEBHOOK
             requests.post(WEBHOOK_URL, json=payload)
 
-            print(exchange.get) # Before the try block
             try:
                 # Fetch current market price
                 ticker = exchange.fetch_ticker(symbol)
