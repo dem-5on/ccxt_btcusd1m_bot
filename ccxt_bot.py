@@ -11,9 +11,9 @@ import requests
 while True:
     try:
         
-        exchange = ccxt.binance({
-            'apiKey':secret.BINANCE_API_KEY,
-            'secret':secret.BINANCE_SECRET_KEY
+        exchange = ccxt.gateio({
+            'apiKey':secret.GATEIO_API_KEY,
+            'secret':secret.GATEIO_SECRET_KEY
         })
         server_time = exchange.fetch_time()
         symbol = 'BTC/USDT'
