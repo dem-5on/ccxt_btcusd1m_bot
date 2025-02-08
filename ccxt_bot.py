@@ -2,7 +2,6 @@ import ccxt
 import ta
 import secret
 import pandas as pd
-import schedule
 import time
 import warnings 
 warnings.filterwarnings('ignore')
@@ -10,7 +9,6 @@ import requests
 
 while True:
     try:
-        
         exchange = ccxt.gateio({
             'apiKey':secret.GATEIO_API_KEY,
             'secret':secret.GATEIO_SECRET_KEY
@@ -19,7 +17,7 @@ while True:
         symbol = 'BTC/USDT'
 
         def tr(df):
-            #calculating for atr manually(instead of using ta library)
+            print('calculating tr')
             df['previous_close'] = df['close'].shift(1)
             df['high-low'] =  df['high'] - df['low']
             df['high-pc'] = df['high'] - df['previous_close']
@@ -116,7 +114,7 @@ while True:
             return df
 
 
-        def check_signal(ema_data,ha_data, s_data, multiplier=2, risk_reward_ratio=2):
+        def check_signal(s_data,ha_data,ema_data,multiplier=2, risk_reward_ratio=2):
             SIGNAL_MESSAGE = ('=====================================\n'
             'Checking for buy or sell signal\n\n')
             payload = {
@@ -331,7 +329,7 @@ while True:
 
         def run():
             print('fetching market data')
-            bars = exchange.fetch_ohlcv('BTC/USDT', timeframe='1m', limit=40)
+            bars = exchange.fetch_ohlcv('BTC/USDT', timeframe='1m', limit=35)
             df = pd.DataFrame(bars[:-1], columns=['timestamp','open','high','low','close','volume'])
             df['timestamp']=pd.to_datetime(df['timestamp'], unit='ms')
 
@@ -339,7 +337,7 @@ while True:
             ha_data = ha(df)
             ema_data = ema(df)
             check_signal(s_data,ha_data,ema_data)
-
+        run()
 
     except ccxt.NetworkError as e:
         print(f'Network error: {e}')
