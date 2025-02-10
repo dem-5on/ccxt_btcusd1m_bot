@@ -18,4 +18,4 @@ COPY . .
 VOLUME /app/secrets
 
 # Run the bot
-CMD ["python", "ccxt_bot.py"]
+CMD ["python", "dystopia_trend.py"]
