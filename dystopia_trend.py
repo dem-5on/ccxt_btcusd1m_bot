@@ -10,6 +10,7 @@ import secret
 
 # Dictionary to store active trades
 active_trades = {}
+symbol = 'BTC/USDT'
 
 def update_trailing_stop(trade_id, current_price):
     """
@@ -105,7 +106,14 @@ def place_trade(exchange, symbol, side, amount, price, ha_data, multiplier = 2):
         return trade_id
         
     except Exception as e:
-        print(f"Error placing trade: {e}")
+        trade_error = f"Error placing trade: {e}"
+        payload = {
+                'username': 'alertbot',
+                'content': trade_error
+            }
+        WEBHOOK_URL = secret.DISCORD_WEBHOOK
+        requests.post(WEBHOOK_URL, json=payload)
+
         return None
 
 def close_trade(exchange, trade_id):
@@ -125,7 +133,14 @@ def close_trade(exchange, trade_id):
         del active_trades[trade_id]
         
     except Exception as e:
-        print(f"Error closing trade: {e}")
+        trade_error = f"Error placing trade: {e}"
+        payload = {
+                'username': 'alertbot',
+                'content': trade_error
+            }
+        WEBHOOK_URL = secret.DISCORD_WEBHOOK
+        requests.post(WEBHOOK_URL, json=payload)
+
 
 def check_signal(exchange, symbol, ema_data, ha_data, s_data):
     """
@@ -176,7 +191,7 @@ def check_signal(exchange, symbol, ema_data, ha_data, s_data):
                 requests.post(WEBHOOK_URL, json=payload)
 
                 # Buy signal
-                trade_id = place_trade(exchange, symbol, 'BUY', amount, current_price)
+                trade_id = place_trade(exchange, symbol, 'BUY', amount, current_price, ha_data)
                 if trade_id:
                     open_long = f"Opened long position: {trade_id}"
                     payload = {
@@ -197,7 +212,7 @@ def check_signal(exchange, symbol, ema_data, ha_data, s_data):
                 requests.post(WEBHOOK_URL, json=payload)
 
                 # Sell signal
-                trade_id = place_trade(exchange, symbol, 'SELL', amount, current_price)
+                trade_id = place_trade(exchange, symbol, 'SELL', amount, current_price, ha_data)
                 if trade_id:
                     open_short = f"Opened short position: {trade_id}"
                     payload = {
@@ -327,14 +342,14 @@ def run():
     Modified run function
     """
     print('fetching market data')
-    bars = exchange.fetch_ohlcv('BTC/USDT', timeframe='1m', limit=35)
+    bars = exchange.fetch_ohlcv(symbol, timeframe='1m', limit=35)
     df = pd.DataFrame(bars[:-1], columns=['timestamp','open','high','low','close','volume'])
     df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
 
     s_data = supertrend(df)
     ha_data = ha(df)
     ema_data = ema(df)
-    check_signal(exchange, 'BTC/USDT', ema_data, ha_data, s_data)
+    check_signal(exchange, symbol, ema_data, ha_data, s_data)
 
 # Main loop
 while True:
