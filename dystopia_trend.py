@@ -161,12 +161,12 @@ def check_signal(exchange, symbol, ema_data, ha_data, s_data):
             }
             WEBHOOK_URL = secret.DISCORD_WEBHOOK
             requests.post(WEBHOOK_URL, json=payload)
-            update_trailing_stop(symbol, trade_id, current_price)
+            update_trailing_stop(trade_id, current_price)
             
-            # Check if stop is hit
-            if check_stop_hit(symbol, trade_id, current_price):
-                close_trade(exchange, trade_id)
-                continue
+            # # Check if stop is hit
+            # if check_stop_hit(symbol, trade_id, current_price):
+            #     close_trade(exchange, trade_id)
+            #     continue
         
         # Get current trend state
         current_supertrend = s_data['in_uptrend'].iloc[-1]
@@ -342,7 +342,7 @@ def run():
     Modified run function
     """
     print('fetching market data')
-    bars = exchange.fetch_ohlcv(symbol, timeframe='1m', limit=35)
+    bars = exchange.fetch_ohlcv(symbol, timeframe='15m', limit=35)
     df = pd.DataFrame(bars[:-1], columns=['timestamp','open','high','low','close','volume'])
     df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
 
@@ -387,4 +387,4 @@ while True:
         requests.post(WEBHOOK_URL, json=payload)
 
     
-    time.sleep(60)
+    time.sleep(900)
