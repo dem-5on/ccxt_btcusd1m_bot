@@ -201,26 +201,26 @@ def check_signal(exchange, symbol, ema_data, ha_data, s_data):
                     WEBHOOK_URL = secret.DISCORD_WEBHOOK
                     requests.post(WEBHOOK_URL, json=payload)
                     
-            elif not current_ha_trend and not current_supertrend and not current_ema_trend:
-                Down_trend = ('Down trend detected, Sell\n'
-                            f'The trend is: {current_supertrend} : {current_ha_trend} : {current_ema_trend}')
-                payload = {
-                'username': 'alertbot',
-                'content': Down_trend
-                }
-                WEBHOOK_URL = secret.DISCORD_WEBHOOK
-                requests.post(WEBHOOK_URL, json=payload)
+            # elif not current_ha_trend and not current_supertrend and not current_ema_trend:
+            #     Down_trend = ('Down trend detected, Sell\n'
+            #                 f'The trend is: {current_supertrend} : {current_ha_trend} : {current_ema_trend}')
+            #     payload = {
+            #     'username': 'alertbot',
+            #     'content': Down_trend
+            #     }
+            #     WEBHOOK_URL = secret.DISCORD_WEBHOOK
+            #     requests.post(WEBHOOK_URL, json=payload)
 
-                # Sell signal
-                trade_id = place_trade(exchange, symbol, 'SELL', amount, current_price, ha_data)
-                if trade_id:
-                    open_short = f"Opened short position: {trade_id}"
-                    payload = {
-                    'username': 'alertbot',
-                    'content': open_short
-                    }
-                    WEBHOOK_URL = secret.DISCORD_WEBHOOK
-                    requests.post(WEBHOOK_URL, json=payload)
+            #     # Sell signal
+            #     trade_id = place_trade(exchange, symbol, 'SELL', amount, current_price, ha_data)
+            #     if trade_id:
+            #         open_short = f"Opened short position: {trade_id}"
+            #         payload = {
+            #         'username': 'alertbot',
+            #         'content': open_short
+            #         }
+            #         WEBHOOK_URL = secret.DISCORD_WEBHOOK
+            #         requests.post(WEBHOOK_URL, json=payload)
             else:
                 no_signal =('No signal was detected\n'
                             f'Current trends are: {current_supertrend} : {current_ha_trend} : {current_ema_trend}') 
