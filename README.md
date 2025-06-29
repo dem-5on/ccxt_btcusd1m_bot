@@ -40,6 +40,8 @@ Create a file named `secret.py` in the root of your project directory:
 BINANCE_API_KEY = "your_binance_api_key"
 BINANCE_SECRET_KEY = "your_binance_secret_key"
 DISCORD_WEBHOOK = "your_discord_webhook_url"
+
+`other exchanges can be added`
 ```
 
 ---
@@ -82,6 +84,9 @@ The current trends are: True : True : True
 ├── dystopia_trend.py    # Main bot logic
 ├── secret.py            # API keys and Discord webhook
 ├── README.md            # This file
+├── Dockerfile           # docker container conf
+├── docker-compose.yml   # docker-compose files
+├── requirements.txt     # dependencies needed to install
 ```
 
 ---
